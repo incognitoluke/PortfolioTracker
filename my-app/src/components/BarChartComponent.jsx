@@ -1,28 +1,39 @@
-import React from 'react';
-import Plot from 'react-plotly.js';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import React from 'react'
 
-const BarChartComponent = ({ labels, values, title = 'Bar Chart' }) => {
+// Bar Chart Component
+const BarChartComponent = ({ data, title = "Bar Chart" }) => {
   return (
-    <Plot
-      data={[
-        {
-          type: 'bar',
-          x: labels,
-          y: values,
-          marker: { color: 'orange' },
-        }
-      ]}
-      layout={{
-        title,
-        xaxis: { title: 'Categories' },
-        yaxis: { title: 'Values' },
-        autosize: true,
-        margin: { t: 40, l: 50, r: 30, b: 50 },
-      }}
-      useResizeHandler
-      style={{ width: '100%', height: '100%' }}
-    />
+    <div style={{ padding: '40px', height: '100%' }}>
+      <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#333', fontSize: '24px', fontWeight: '600' }}>
+        {title}
+      </h3>
+      <ResponsiveContainer width="100%" height="80%">
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis 
+            dataKey="name" 
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis 
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip />
+          <Bar 
+            dataKey="value" 
+            fill="#f97316"
+            radius={[4, 4, 0, 0]}
+            animationBegin={500}
+            animationDuration={1200}
+            animationEasing="ease-in-out"
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 
-export default BarChartComponent;
+
+export default BarChartComponent

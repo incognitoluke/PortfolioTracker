@@ -1,28 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import BarChartComponent from '../components/BarChartComponent';
+import LineChartComponent from '../components/LineChartComponent';
+import PieChartComponent from '../components/PieChartComponent'
+import TopSidebar from '../panels/TopSidebar';
+import Suhela from '../images/Suhela.png';
 
+// Main Rotating Chart Component (Stage Parent)
 const RotatingChart = () => {
-  const [currentChart, setCurrentChart] = useState(0); // 0: line, 1: bar, 2: pie
+  const [currentChart, setCurrentChart] = useState(0);
   const [animationKey, setAnimationKey] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      // Start fade out
       setIsTransitioning(true);
       
-      // After fade out completes, switch chart and fade in
+      // Wait for fade-out to complete, then switch charts
       setTimeout(() => {
-        setCurrentChart(prev => (prev + 1) % 3); // Cycle through 3 charts
+        setCurrentChart(prev => (prev + 1) % 3);
         setAnimationKey(prev => prev + 1);
-        setIsTransitioning(false);
-      }, 500); // Half second for fade out
+        
+        // Allow new chart to fade in
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 100);
+      }, 800); // Wait for fade-out transition
       
-    }, 5000); // every 5 seconds
+    }, 6000);
 
     return () => clearInterval(interval);
   }, []);
 
+  // Sample data for each chart
   const barData = [
     { name: 'A', value: 12 },
     { name: 'B', value: 19 },
@@ -38,246 +48,148 @@ const RotatingChart = () => {
     { name: 'Cash', value: 5, color: '#8b5cf6' },
   ];
 
-  const lineData = [
-    { name: 'Jan', value: 10 },
-    { name: 'Feb', value: 15 },
-    { name: 'Mar', value: 13 },
-    { name: 'Apr', value: 17 },
-  ];
+const lineData = [
+    { name: '9:30', value: 196.50 },
+    { name: '9:45', value: 197.20 },
+    { name: '10:00', value: 196.85 },
+    { name: '10:15', value: 197.65 },
+    { name: '10:30', value: 198.10 },
+    { name: '10:45', value: 197.90 },
+    { name: '11:00', value: 198.45 },
+    { name: '11:15', value: 198.75 },
+    { name: '11:30', value: 198.20 },
+    { name: '11:45', value: 197.95 },
+    { name: '12:00', value: 198.30 },
+    { name: '12:15', value: 198.60 },
+    { name: '12:30', value: 198.15 },
+    { name: '12:45', value: 197.80 },
+    { name: '13:00', value: 198.25 },
+    { name: '13:15', value: 198.50 },
+    { name: '13:30', value: 199.10 },
+    { name: '13:45', value: 199.35 },
+    { name: '14:00', value: 198.95 },
+    { name: '14:15', value: 199.20 },
+    { name: '14:30', value: 198.70 },
+    { name: '14:45', value: 199.40 },
+    { name: '15:00', value: 199.75 },
+    { name: '15:15', value: 199.30 },
+    { name: '15:30', value: 199.55 },
+    { name: '15:45', value: 199.85 },
+    { name: '16:00', value: 199.10 }
+];
 
   const chartTypes = ['Line Chart', 'Bar Chart', 'Asset Allocation'];
 
+  // Chart configurations
+  const chartConfigs = [
+    {
+      component: LineChartComponent,
+      data: lineData,
+      title: "Line Chart"
+    },
+    {
+      component: BarChartComponent,
+      data: barData,
+      title: "Bar Chart"
+    },
+    {
+      component: PieChartComponent,
+      data: pieData,
+      title: "Asset Allocation"
+    }
+  ];
+
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100vh', fontFamily: 'Arial, sans-serif' }}>
-      {/* Sidebar - 20% width */}
-      <div style={{
-        width: '20%',
-        backgroundColor: '#f8fafc',
-        borderRight: '1px solid #e2e8f0',
-        padding: '24px',
-        boxSizing: 'border-box'
-      }}>
-        <h2 style={{ 
-          margin: '0 0 24px 0', 
-          fontSize: '18px', 
-          fontWeight: '600', 
-          color: '#1e293b' 
-        }}>
-          Dashboard
-        </h2>
-        
-        <div style={{ marginBottom: '32px' }}>
-          <h3 style={{ 
-            fontSize: '14px', 
-            fontWeight: '500', 
-            color: '#64748b', 
-            margin: '0 0 12px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }}>
-            Current View
-          </h3>
-          <div style={{
-            padding: '8px 12px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: '500'
-          }}>
-            {chartTypes[currentChart]}
-          </div>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', fontFamily: 'Arial, sans-serif', position: 'relative' }}>
+      {/* Top Sidebar Component */}
+      <TopSidebar 
+        currentChart={currentChart} 
+        chartTypes={chartTypes} 
+      />
 
-        <div style={{ marginBottom: '32px' }}>
-          <h3 style={{ 
-            fontSize: '14px', 
-            fontWeight: '500', 
-            color: '#64748b', 
-            margin: '0 0 12px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }}>
-            Chart Rotation
-          </h3>
-          <div style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5' }}>
-            Charts rotate every 5 seconds automatically
-          </div>
-        </div>
-
-        <div>
-          <h3 style={{ 
-            fontSize: '14px', 
-            fontWeight: '500', 
-            color: '#64748b', 
-            margin: '0 0 12px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }}>
-            Available Charts
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {chartTypes.map((type, index) => (
-              <div
-                key={type}
-                style={{
-                  padding: '8px 12px',
-                  backgroundColor: currentChart === index ? '#e0f2fe' : '#ffffff',
-                  border: currentChart === index ? '1px solid #0891b2' : '1px solid #e2e8f0',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  color: currentChart === index ? '#0891b2' : '#64748b',
-                  fontWeight: currentChart === index ? '500' : '400'
-                }}
-              >
-                {type}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Chart Area - 80% width */}
+      {/* Chart Area - Full width below top bar */}
       <div style={{ 
-        width: '80%', 
+        flex: 1,
         position: 'relative', 
-        minHeight: '400px',
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        backgroundRepeat: 'no-repeat',
+        backgroundImage: `url("${Suhela}")`,
+        backgroundPosition: 'center center',
+        backgroundSize: '800px 800px',
       }}>
-        {/* Line Chart */}
-        <div
-          key={`line-${animationKey}`}
-          style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            opacity: currentChart === 0 && !isTransitioning ? 1 : 0,
-            transition: 'opacity 0.5s ease-in-out',
-            zIndex: currentChart === 0 ? 3 : 1,
-          }}
-        >
-          <div style={{ padding: '40px', height: '100%' }}>
-            <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#333', fontSize: '24px', fontWeight: '600' }}>
-              Line Chart
-            </h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <LineChart data={lineData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis 
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#2563eb" 
-                  strokeWidth={3}
-                  dot={false}
-                  activeDot={{ r: 8, stroke: '#2563eb', strokeWidth: 2 }}
-                  // Animation properties
-                  animationBegin={200}
-                  animationDuration={1500}
-                  animationEasing="ease-in-out"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        {chartConfigs.map((config, index) => {
+          const ChartComponent = config.component;
+          const isActive = currentChart === index;
+          
+          return (
+            <div
+              key={`${index}-${animationKey}`}
+              style={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                opacity: isActive && !isTransitioning ? 1 : 0,
+                transform: isActive && !isTransitioning ? 'translateY(0)' : 'translateY(20px)',
+                transition: 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                zIndex: isActive ? 3 : 1,
+                pointerEvents: isActive ? 'auto' : 'none'
+              }}
+            >
+              <ChartComponent 
+                data={config.data} 
+                title={config.title}
+              />
+            </div>
+          );
+        })}
 
-        {/* Bar Chart */}
-        <div
-          key={`bar-${animationKey}`}
-          style={{
+        {/* Transition Loading Indicator */}
+        {isTransitioning && (
+          <div style={{
             position: 'absolute',
-            width: '100%',
-            height: '100%',
-            opacity: currentChart === 1 && !isTransitioning ? 1 : 0,
-            transition: 'opacity 0.5s ease-in-out',
-            zIndex: currentChart === 1 ? 3 : 1,
-          }}
-        >
-          <div style={{ padding: '40px', height: '100%' }}>
-            <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#333', fontSize: '24px', fontWeight: '600' }}>
-              Bar Chart
-            </h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis 
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip />
-                <Bar 
-                  dataKey="value" 
-                  fill="#f97316"
-                  radius={[4, 4, 0, 0]}
-                  // Animation properties
-                  animationBegin={200}
-                  animationDuration={1500}
-                  animationEasing="ease-in-out"
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10
+          }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                backgroundColor: '#3b82f6',
+                borderRadius: '50%',
+                animation: 'bounce 1.4s ease-in-out infinite both',
+              }}></div>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                backgroundColor: '#3b82f6',
+                borderRadius: '50%',
+                animation: 'bounce 1.4s ease-in-out 0.16s infinite both',
+              }}></div>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                backgroundColor: '#3b82f6',
+                borderRadius: '50%',
+                animation: 'bounce 1.4s ease-in-out 0.32s infinite both',
+              }}></div>
+            </div>
           </div>
-        </div>
-
-        {/* Pie Chart */}
-        <div
-          key={`pie-${animationKey}`}
-          style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            opacity: currentChart === 2 && !isTransitioning ? 1 : 0,
-            transition: 'opacity 0.5s ease-in-out',
-            zIndex: currentChart === 2 ? 3 : 1,
-          }}
-        >
-          <div style={{ padding: '40px', height: '100%' }}>
-            <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#333', fontSize: '24px', fontWeight: '600' }}>
-              Asset Allocation
-            </h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={120}
-                  innerRadius={40}
-                  paddingAngle={2}
-                  dataKey="value"
-                  animationBegin={200}
-                  animationDuration={1500}
-                  animationEasing="ease-in-out"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => `${value}%`} />
-                <Legend 
-                  verticalAlign="bottom" 
-                  height={36}
-                  formatter={(value, entry) => `${value}: ${entry.payload.value}%`}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        )}
       </div>
+
+      {/* CSS Keyframes for animations */}
+      <style jsx>{`
+        @keyframes bounce {
+          0%, 80%, 100% {
+            transform: scale(0);
+          }
+          40% {
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 };
