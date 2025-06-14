@@ -1,36 +1,43 @@
-import React, { useEffect, useState } from 'react';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import React from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-// Line Chart Component
+// Area Chart Component
 const LineChartComponent = ({ data, title = "Line Chart" }) => {
-  // Calculate y-axis domain with 10% padding
   const calculateYAxisDomain = (data) => {
     if (!data || data.length === 0) return [0, 100];
-    
+
     const values = data.map(item => item.value).filter(val => val !== null && val !== undefined);
     if (values.length === 0) return [0, 100];
-    
+
     const minValue = Math.min(...values);
     const maxValue = Math.max(...values);
     const range = maxValue - minValue;
-    
-    // Add 10% padding above and below
+
     const padding = range * 0.1;
     const lowerBound = minValue - padding;
     const upperBound = maxValue + padding;
-    
+
     return [lowerBound, upperBound];
   };
 
   const yAxisDomain = calculateYAxisDomain(data);
 
+  const getLineColor = (data) => {
+    if (!data || data.length < 2) return '#2563eb';
+    const first = data[0].value;
+    const last = data[data.length - 1].value;
+    return last >= first ? '#16a34a' : '#dc2626';
+  };
+
+  const lineColor = getLineColor(data);
+
   return (
     <div style={{ padding: '40px', height: '100%' }}>
-      <h3 style={{ textAlign: 'center', marginBottom: '20px', color: '#333', fontSize: '24px', fontWeight: '600' }}>
+      <h3 style={{ textAlign: 'left', marginBottom: '20px', color: '#626566', fontSize: '32px', fontWeight: '400' }}>
         {title}
       </h3>
       <ResponsiveContainer width="100%" height="80%">
-        <LineChart data={data}>
+        <AreaChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
             dataKey="name" 
@@ -45,18 +52,19 @@ const LineChartComponent = ({ data, title = "Line Chart" }) => {
             tickFormatter={(value) => value.toFixed(2)}
           />
           <Tooltip />
-          <Line 
+          <Area 
             type="monotone" 
             dataKey="value" 
-            stroke="#2563eb" 
+            stroke={lineColor} 
             strokeWidth={3}
-            dot={false}
-            activeDot={{ r: 8, stroke: '#2563eb', strokeWidth: 2 }}
+            fill={lineColor}
+            fillOpacity={0.25}
+            activeDot={{ r: 8, stroke: lineColor, strokeWidth: 2 }}
             animationBegin={300}
             animationDuration={1200}
             animationEasing="ease-in-out"
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

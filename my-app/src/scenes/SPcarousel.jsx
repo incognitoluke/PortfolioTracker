@@ -4,7 +4,7 @@ import ChartTitle from '../components/ChartTitle';
 import TopSidebar from '../panels/TopSidebar';
 import Suhela from '../images/Suhela.png';
 
-const tickers = ['TSLA', 'AAPL', 'MSFT', "GOOGL", 'AMZN', 'NFLX', 'NVDA', 'META', 'AMD', 'INTC'];
+const tickers = ['TSLA', 'AAPL', 'MSFT', "GOOGL", 'AMZN', 'NFLX', 'NVDA', 'META', 'AMD', 'INTC','MMM'];
 
 const SPcarousel = () => {
   const [chartIndex, setChartIndex] = useState(0);
@@ -21,25 +21,10 @@ const SPcarousel = () => {
             if (!response.ok) throw new Error();
             const data = await response.json();
 
-            let transformedData;
-            if (Array.isArray(data)) {
-              transformedData = data.map(item => ({
-                name: formatDate(item.date || item.timestamp),
-                value: parseFloat(item.price || item.close || item.value)
-              }));
-            } else if (data.dates && data.prices) {
-              transformedData = data.dates.map((date, index) => ({
-                name: formatDate(date),
-                value: parseFloat(data.prices[index])
-              }));
-            } else if (data.data) {
-              transformedData = data.data.map(item => ({
-                name: formatDate(item.date || item.timestamp),
-                value: parseFloat(item.price || item.close || item.value)
-              }));
-            } else {
-              throw new Error('Unexpected format');
-            }
+            let transformedData = data.data.map(item => ({
+              name: formatDate(item.date || item.timestamp),
+              value: parseFloat(item.price || item.close || item.value)
+            }));
 
             const newest = transformedData[transformedData.length - 1].value;
             const oldest = transformedData[0].value;
@@ -47,6 +32,7 @@ const SPcarousel = () => {
 
             return {
               ticker,
+              companyName: data.company_name || ticker,
               data: transformedData,
               latestPrice: newest,
               pctChange: change
@@ -59,6 +45,7 @@ const SPcarousel = () => {
             const change = ((105 - 100) / 100) * 100;
             return {
               ticker,
+              companyName: ticker,
               data: fallback,
               latestPrice: 105,
               pctChange: change
@@ -123,7 +110,7 @@ const SPcarousel = () => {
           >
             <LineChartComponent
               data={entry.data}
-              title={<ChartTitle ticker={entry.ticker} latestPrice={entry.latestPrice} pctChange={entry.pctChange} />}
+              title={<ChartTitle ticker={entry.ticker} companyName={entry.companyName} latestPrice={entry.latestPrice} pctChange={entry.pctChange} />}
             />
           </div>
         ))}
