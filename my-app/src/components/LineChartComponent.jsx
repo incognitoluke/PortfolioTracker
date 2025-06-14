@@ -36,11 +36,13 @@ const LineChartComponent = ({ data, title = "Line Chart" }) => {
             dataKey="name" 
             axisLine={false}
             tickLine={false}
+            interval={Math.max(Math.floor((data?.length || 1) / 5), 1)}
           />
           <YAxis 
             axisLine={false}
             tickLine={false}
             domain={yAxisDomain}
+            tickFormatter={(value) => value.toFixed(2)}
           />
           <Tooltip />
           <Line 
