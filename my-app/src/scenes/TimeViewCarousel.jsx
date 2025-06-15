@@ -5,119 +5,90 @@ import TopSubSidebar from '../panels/TopSubSidebar';
 import Suhela from '../images/Suhela.png';
 
 const timeViews = ['1-Day', 'YTD', '5-Year'];
-const DEFAULT_TICKER = 'AAPL'; // You can make this configurable
+const DEFAULT_TICKER = 'AAPL';
 
-// Global cache to store data for all tickers and time views
-const dataCache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-const TimeViewCarousel = ({ ticker = DEFAULT_TICKER }) => {
+const TimeViewCarousel = ({ ticker = DEFAULT_TICKER, preloadedData = [] }) => {
   const [chartIndex, setChartIndex] = useState(0);
   const [animationKey, setAnimationKey] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [chartData, setChartData] = useState([]);
   const [companyName, setCompanyName] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDataWithCache = async () => {
-      setIsLoading(true);
+    // Use preloaded data if available, otherwise fall back to individual fetching
+    if (preloadedData && preloadedData.length > 0) {
+      console.log(`Using preloaded data for ${ticker}`);
+      setChartData(preloadedData);
       
-      const results = await Promise.all(
-        timeViews.map(async (timeView) => {
-          const cacheKey = `${ticker}-${timeView}`;
-          const cached = dataCache.get(cacheKey);
+      // Set company name from preloaded data
+      const firstEntry = preloadedData[0];
+      if (firstEntry && firstEntry.companyName) {
+        setCompanyName(firstEntry.companyName);
+      }
+    } else {
+      // Fallback to individual fetching (original logic)
+      console.log(`No preloaded data for ${ticker}, fetching individually`);
+      fetchDataIndividually();
+    }
+  }, [ticker, preloadedData]);
+
+  const fetchDataIndividually = async () => {
+    // This is the original fetching logic as fallback
+    const results = await Promise.all(
+      timeViews.map(async (timeView) => {
+        try {
+          const { period, interval } = getPeriodAndInterval(timeView);
+          const response = await fetch(`http://localhost:5000/api/stock/${ticker}?period=${period}&interval=${interval}`);
           
-          // Check if we have valid cached data
-          if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
-            console.log(`Using cached data for ${cacheKey}`);
-            return cached.data;
+          if (!response.ok) throw new Error();
+          const data = await response.json();
+
+          if (!companyName && data.company_name) {
+            setCompanyName(data.company_name);
           }
 
-          try {
-            console.log(`Fetching fresh data for ${cacheKey}`);
-            const { period, interval } = getPeriodAndInterval(timeView);
-            const response = await fetch(`http://localhost:5000/api/stock/${ticker}?period=${period}&interval=${interval}`);
-            
-            if (!response.ok) throw new Error();
-            const data = await response.json();
+          const transformedData = data.data.map(item => ({
+            name: item.date,
+            value: parseFloat(item.price)
+          }));
 
-            // Set company name from first successful response
-            if (!companyName && data.company_name) {
-              setCompanyName(data.company_name);
-            }
+          const newest = transformedData[transformedData.length - 1].value;
+          const oldest = transformedData[0].value;
+          const change = ((newest - oldest) / oldest) * 100;
 
-            // Transform the data to match our format
-            const transformedData = data.data.map(item => ({
-              name: item.date, // Server already formats dates appropriately
-              value: parseFloat(item.price)
-            }));
-
-            const newest = transformedData[transformedData.length - 1].value;
-            const oldest = transformedData[0].value;
-            const change = ((newest - oldest) / oldest) * 100;
-
-            const result = {
-              timeView,
-              ticker,
-              data: transformedData,
-              latestPrice: newest,
-              pctChange: change
-            };
-
-            // Cache the result with timestamp
-            dataCache.set(cacheKey, {
-              data: result,
-              timestamp: Date.now()
-            });
-
-            return result;
-          } catch (err) {
-            console.log(`Using fallback data for ${cacheKey}`);
-            // Fallback data for each time view
-            const fallbackData = generateFallbackData(timeView);
-            const newest = fallbackData[fallbackData.length - 1].value;
-            const oldest = fallbackData[0].value;
-            const change = ((newest - oldest) / oldest) * 100;
-            
-            const result = {
-              timeView,
-              ticker,
-              data: fallbackData,
-              latestPrice: newest,
-              pctChange: change
-            };
-
-            // Cache fallback data too (but with shorter duration)
-            dataCache.set(cacheKey, {
-              data: result,
-              timestamp: Date.now() - (CACHE_DURATION - 60000) // Cache for only 1 minute if fallback
-            });
-
-            return result;
-          }
-        })
-      );
-      
-      setChartData(results);
-      setIsLoading(false);
-    };
-
-    // Initial fetch
-    fetchDataWithCache();
-
-    // Set up interval to refresh data every 5 minutes
-    const dataRefreshInterval = setInterval(() => {
-      // Don't show loading on background refreshes
-      fetchDataWithCache();
-    }, CACHE_DURATION);
-
-    return () => clearInterval(dataRefreshInterval);
-  }, [ticker, companyName]);
+          return {
+            timeView,
+            ticker,
+            data: transformedData,
+            latestPrice: newest,
+            pctChange: change,
+            companyName: data.company_name || ticker
+          };
+        } catch (err) {
+          console.log(`Using fallback data for ${ticker}-${timeView}`);
+          const fallbackData = generateFallbackData(timeView);
+          const newest = fallbackData[fallbackData.length - 1].value;
+          const oldest = fallbackData[0].value;
+          const change = ((newest - oldest) / oldest) * 100;
+          
+          return {
+            timeView,
+            ticker,
+            data: fallbackData,
+            latestPrice: newest,
+            pctChange: change,
+            companyName: ticker
+          };
+        }
+      })
+    );
+    
+    setChartData(results);
+  };
 
   useEffect(() => {
-    // Only start the carousel animation after data is loaded
-    if (!isLoading && chartData.length > 0) {
+    // Only start the carousel animation after data is available
+    if (chartData.length > 0) {
       const interval = setInterval(() => {
         setIsTransitioning(true);
         setTimeout(() => {
@@ -130,26 +101,19 @@ const TimeViewCarousel = ({ ticker = DEFAULT_TICKER }) => {
       }, 6000);
       return () => clearInterval(interval);
     }
-  }, [isLoading, chartData]);
+  }, [chartData]);
 
   const getPeriodAndInterval = (timeView) => {
-    // Map time views to appropriate yfinance period and interval parameters
     switch (timeView) {
       case '1-Day':
-        return { period: '1d', interval: '5m' }; // Intraday 5-minute intervals
+        return { period: '1d', interval: '5m' };
       case 'YTD':
-        return { period: 'ytd', interval: '1d' }; // Year-to-date daily data
+        return { period: 'ytd', interval: '1d' };
       case '5-Year':
-        return { period: '5y', interval: '1wk' }; // 5 years with weekly intervals
+        return { period: '5y', interval: '1wk' };
       default:
         return { period: '1d', interval: '5m' };
     }
-  };
-
-  const formatDateForTimeView = (dateString, timeView) => {
-    // The server already formats dates appropriately based on interval
-    // So we can just return the date string as-is
-    return dateString;
   };
 
   const generateFallbackData = (timeView) => {
@@ -158,7 +122,6 @@ const TimeViewCarousel = ({ ticker = DEFAULT_TICKER }) => {
     
     switch (timeView) {
       case '1-Day':
-        // Generate hourly data for trading day (9:30 AM to 4:00 PM)
         return Array.from({ length: 7 }, (_, i) => {
           const hour = 9 + Math.floor((i * 6.5) / 6);
           const minute = i === 0 ? 30 : (i * 30) % 60;
@@ -171,7 +134,6 @@ const TimeViewCarousel = ({ ticker = DEFAULT_TICKER }) => {
         });
       
       case 'YTD':
-        // Generate monthly data from January to current month
         const currentMonth = new Date().getMonth() + 1;
         return Array.from({ length: currentMonth }, (_, i) => {
           const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
@@ -184,7 +146,6 @@ const TimeViewCarousel = ({ ticker = DEFAULT_TICKER }) => {
         });
       
       case '5-Year':
-        // Generate yearly data for last 5 years
         const currentYear = new Date().getFullYear();
         return Array.from({ length: 5 }, (_, i) => {
           const year = currentYear - 4 + i;
@@ -205,13 +166,16 @@ const TimeViewCarousel = ({ ticker = DEFAULT_TICKER }) => {
     return (
       <ChartTitle 
         ticker={entry.ticker} 
-        companyName={companyName || entry.ticker}
+        companyName={entry.companyName || companyName || entry.ticker}
         latestPrice={entry.latestPrice} 
         pctChange={entry.pctChange}
         timeView={timeViewLabel}
       />
     );
   };
+
+  // Show loading state only if we don't have preloaded data and chartData is empty
+  const isLoading = !preloadedData.length && !chartData.length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', fontFamily: 'Arial, sans-serif', position: 'relative' }}>
@@ -231,7 +195,7 @@ const TimeViewCarousel = ({ ticker = DEFAULT_TICKER }) => {
         backgroundSize: '800px 800px',
       }}>
         {isLoading ? (
-          // Loading state - show spinner
+          // Loading state - only show if no preloaded data
           <div style={{
             position: 'absolute',
             top: '50%',
@@ -263,7 +227,7 @@ const TimeViewCarousel = ({ ticker = DEFAULT_TICKER }) => {
             </div>
           </div>
         ) : (
-          // Charts - only render when data is loaded
+          // Charts - render when data is available (either preloaded or fetched)
           <>
             {chartData.map((entry, index) => (
               <div
