@@ -4,6 +4,7 @@ import RotatingChart from './scenes/RotatingChart';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Staging from './scenes/Staging';
 import SPcarousel from './scenes/SPcarousel';
+import TimeViewCarousel from './scenes/TimeViewCarousel';
 
 
 const App = () => {
@@ -37,6 +38,7 @@ const App = () => {
             <Route path="/" element={<RotatingChart />} />
             <Route path="/staging" element={<Staging />} />
             <Route path="/carousel" element={<SPcarousel />} />
+            <Route path="/time" element={<TimeViewCarousel />} />
           </Routes>
         </div>
       </div>

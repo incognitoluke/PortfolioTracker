@@ -1,117 +1,65 @@
 import React, { useEffect, useState } from 'react';
-import LineChartComponent from '../components/LineChartComponent';
-import ChartTitle from '../components/ChartTitle';
+import TimeViewCarousel from './TimeViewCarousel';
 import TopSidebar from '../panels/TopSidebar';
 import Suhela from '../images/Suhela.png';
 
-const tickers = ['TSLA', 'AAPL', 'MSFT', "GOOGL", 'AMZN', 'NFLX', 'NVDA', 'META', 'AMD', 'INTC','MMM'];
+const tickers = ['XLE', 'XLP', 'XLF', "GOOGL", 'AMZN', 'NFLX', 'NVDA', 'META', 'AMD', 'INTC','MMM'];
 
 const SPcarousel = () => {
-  const [chartIndex, setChartIndex] = useState(0);
+  const [currentTickerIndex, setCurrentTickerIndex] = useState(0);
   const [animationKey, setAnimationKey] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
-    const fetchAllData = async () => {
-      const results = await Promise.all(
-        tickers.map(async ticker => {
-          try {
-            const response = await fetch(`http://localhost:5000/api/stock/${ticker}`);
-            if (!response.ok) throw new Error();
-            const data = await response.json();
-
-            let transformedData = data.data.map(item => ({
-              name: formatDate(item.date || item.timestamp),
-              value: parseFloat(item.price || item.close || item.value)
-            }));
-
-            const newest = transformedData[transformedData.length - 1].value;
-            const oldest = transformedData[0].value;
-            const change = ((newest - oldest) / oldest) * 100;
-
-            return {
-              ticker,
-              companyName: data.company_name || ticker,
-              data: transformedData,
-              latestPrice: newest,
-              pctChange: change
-            };
-          } catch (err) {
-            const fallback = [
-              { name: '9:30', value: 100 },
-              { name: '16:00', value: 105 }
-            ];
-            const change = ((105 - 100) / 100) * 100;
-            return {
-              ticker,
-              companyName: ticker,
-              data: fallback,
-              latestPrice: 105,
-              pctChange: change
-            };
-          }
-        })
-      );
-      setChartData(results);
-    };
-
-    fetchAllData();
-  }, []);
-
-  useEffect(() => {
+    // Cycle through companies every 18 seconds (6 seconds per time view × 3 views)
     const interval = setInterval(() => {
       setIsTransitioning(true);
       setTimeout(() => {
-        setChartIndex(prev => (prev + 1) % tickers.length);
+        setCurrentTickerIndex(prev => (prev + 1) % tickers.length);
         setAnimationKey(prev => prev + 1);
         setTimeout(() => {
           setIsTransitioning(false);
         }, 100);
       }, 800);
-    }, 6000);
+    }, 18000);
     return () => clearInterval(interval);
   }, []);
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const currentTicker = tickers[currentTickerIndex];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', fontFamily: 'Arial, sans-serif', position: 'relative' }}>
       <TopSidebar 
-        currentChart={chartIndex} 
-        chartTypes={tickers} 
+        currentChart={currentTickerIndex} 
+        chartTypes={tickers}
+        currentTicker={currentTicker}
       />
       <div style={{ 
         flex: 1,
         position: 'relative', 
         backgroundColor: '#ffffff',
         backgroundRepeat: 'no-repeat',
-        backgroundImage: `url("${Suhela}")`,
         backgroundPosition: 'center center',
         backgroundSize: '800px 800px',
       }}>
-        {chartData.map((entry, index) => (
+        {tickers.map((ticker, index) => (
           <div
-            key={`${index}-${animationKey}`}
+            key={`${ticker}-${animationKey}`}
             style={{
               position: 'absolute',
               width: '100%',
               height: '100%',
-              opacity: chartIndex === index && !isTransitioning ? 1 : 0,
-              transform: chartIndex === index && !isTransitioning ? 'translateY(0)' : 'translateY(20px)',
+              opacity: currentTickerIndex === index && !isTransitioning ? 1 : 0,
+              transform: currentTickerIndex === index && !isTransitioning ? 'translateY(0)' : 'translateY(20px)',
               transition: 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-              zIndex: chartIndex === index ? 3 : 1,
-              pointerEvents: chartIndex === index ? 'auto' : 'none'
+              zIndex: currentTickerIndex === index ? 3 : 1,
+              pointerEvents: currentTickerIndex === index ? 'auto' : 'none'
             }}
           >
-            <LineChartComponent
-              data={entry.data}
-              title={<ChartTitle ticker={entry.ticker} companyName={entry.companyName} latestPrice={entry.latestPrice} pctChange={entry.pctChange} />}
-            />
+            {/* Only render TimeViewCarousel for the current ticker to optimize performance */}
+            {currentTickerIndex === index && (
+              <TimeViewCarousel ticker={ticker} />
+            )}
           </div>
         ))}
 
