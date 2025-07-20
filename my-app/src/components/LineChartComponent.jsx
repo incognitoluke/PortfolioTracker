@@ -32,7 +32,7 @@ const LineChartComponent = ({ data, title = "Line Chart" }) => {
   const lineColor = getLineColor(data);
 
   return (
-    <div style={{ padding: '10px', height: '100%' }}>
+    <div style={{ padding: '20px', height: '100%' }}>
       <h3 style={{ textAlign: 'left', marginBottom: '20px', color: '#626566', fontSize: '32px', fontWeight: '400' }}>
         {title}
       </h3>
