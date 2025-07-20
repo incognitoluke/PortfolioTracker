@@ -14,7 +14,7 @@ const LineChartComponent = ({ data, title = "Line Chart" }) => {
     const range = maxValue - minValue;
 
     const padding = range * 0.1;
-    const lowerBound = minValue - padding;
+    const lowerBound = Math.max(0, minValue - padding); // Ensure never below 0
     const upperBound = maxValue + padding;
 
     return [lowerBound, upperBound];
@@ -32,7 +32,7 @@ const LineChartComponent = ({ data, title = "Line Chart" }) => {
   const lineColor = getLineColor(data);
 
   return (
-    <div style={{ padding: '40px', height: '100%' }}>
+    <div style={{ padding: '10px', height: '100%' }}>
       <h3 style={{ textAlign: 'left', marginBottom: '20px', color: '#626566', fontSize: '32px', fontWeight: '400' }}>
         {title}
       </h3>
@@ -44,12 +44,14 @@ const LineChartComponent = ({ data, title = "Line Chart" }) => {
             axisLine={false}
             tickLine={false}
             interval={Math.max(Math.floor((data?.length || 1) / 5), 1)}
+            tick={{ dx: 15 }}
           />
           <YAxis 
             axisLine={false}
             tickLine={false}
             domain={yAxisDomain}
             tickFormatter={(value) => value.toFixed(2)}
+            tick={{ dy: -5 }}
           />
           <Tooltip />
           <Area 

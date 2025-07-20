@@ -4,7 +4,7 @@ import TopSidebar from '../panels/TopSidebar';
 import Suhela from '../images/Suhela.png';
 
 const tickers = ['XLE', 'XLP', 'XLF', "GOOGL", 'AMZN', 'NFLX', 'NVDA', 'META', 'AMD', 'INTC','MMM'];
-const timeViews = ['1-Day', 'YTD', '5-Year'];
+const timeViews = ['1-Day', '1-Week', '1-Month', 'YTD', '5-Year'];
 
 // Global cache to store data for all tickers and time views
 const dataCache = new Map();
@@ -22,6 +22,10 @@ const SPcarousel = () => {
     switch (timeView) {
       case '1-Day':
         return { period: '1d', interval: '5m' };
+      case '1-Week':
+        return { period: '5d', interval: '1h' };
+      case '1-Month':
+        return { period: '1mo', interval: '1d' };
       case 'YTD':
         return { period: 'ytd', interval: '1d' };
       case '5-Year':
@@ -44,6 +48,26 @@ const SPcarousel = () => {
           const randomChange = (Math.random() - 0.5) * volatility;
           return {
             name: time,
+            value: baseValue * (1 + randomChange * (i + 1))
+          };
+        });
+      
+      case '1-Week':
+        const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+        return Array.from({ length: 5 }, (_, i) => {
+          const randomChange = (Math.random() - 0.5) * 0.05;
+          return {
+            name: weekDays[i],
+            value: baseValue * (1 + randomChange * (i + 1))
+          };
+        });
+      
+      case '1-Month':
+        return Array.from({ length: 20 }, (_, i) => {
+          const day = i + 1;
+          const randomChange = (Math.random() - 0.5) * 0.08;
+          return {
+            name: `${day}`,
             value: baseValue * (1 + randomChange * (i + 1))
           };
         });
@@ -155,20 +179,20 @@ const SPcarousel = () => {
     let completedRequests = 0;
     const tickerDataMap = new Map();
 
-    // Create all fetch promises
+    // Create all fetch promises in the correct order
     const fetchPromises = tickers.flatMap(ticker => 
-      timeViews.map(async (timeView) => {
+      timeViews.map(async (timeView, timeViewIndex) => {
         const data = await fetchTickerData(ticker, timeView);
         
         // Update progress
         completedRequests++;
         setPreloadProgress((completedRequests / totalRequests) * 100);
         
-        // Store data in ticker map
+        // Store data in ticker map with proper ordering
         if (!tickerDataMap.has(ticker)) {
-          tickerDataMap.set(ticker, []);
+          tickerDataMap.set(ticker, new Array(timeViews.length));
         }
-        tickerDataMap.get(ticker).push(data);
+        tickerDataMap.get(ticker)[timeViewIndex] = data;
         
         return data;
       })
@@ -212,7 +236,7 @@ const SPcarousel = () => {
             setIsTransitioning(false);
           }, 100);
         }, 800);
-      }, 18000);
+      }, 30000); // Changed from 18000 to 30000 (5 time views × 6 seconds each)
       return () => clearInterval(interval);
     }
   }, [isPreloading, allTickerData]);
@@ -293,11 +317,14 @@ const SPcarousel = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', fontFamily: 'Arial, sans-serif', position: 'relative' }}>
+      {/* Top Sidebar - Shows ticker rotation */}
       <TopSidebar 
         currentChart={currentTickerIndex} 
         chartTypes={tickers}
         currentTicker={currentTicker}
       />
+      
+      {/* Chart Area - Between top and bottom sidebars */}
       <div style={{ 
         flex: 1,
         position: 'relative', 
@@ -325,6 +352,8 @@ const SPcarousel = () => {
               <TimeViewCarousel 
                 ticker={ticker} 
                 preloadedData={allTickerData.get(ticker) || []}
+                showTopBar={false}
+                showBottomBar={true}
               />
             )}
           </div>

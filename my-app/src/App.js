@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from
 import Staging from './scenes/Staging';
 import SPcarousel from './scenes/SPcarousel';
 import TimeViewCarousel from './scenes/TimeViewCarousel';
+import WACarousel from './scenes/WAcarousel';
 
 
 const App = () => {
@@ -38,6 +39,7 @@ const App = () => {
             <Route path="/" element={<RotatingChart />} />
             <Route path="/staging" element={<Staging />} />
             <Route path="/carousel" element={<SPcarousel />} />
+            <Route path="/watchlist" element={<WACarousel />} />
             <Route path="/time" element={<TimeViewCarousel />} />
           </Routes>
         </div>

@@ -1,68 +1,108 @@
 import React, { useState, useEffect } from 'react';
 
 const WatchlistSidebar = () => {
-  const [holdings, setHoldings] = useState([
-    {
-      id: 1,
-      symbol: 'AAPL',
-      name: 'Apple Inc.',
-      price: 175.43,
-      change: 2.15,
-      changePercent: 1.24,
-      shares: 50,
-      value: 8771.50
-    },
-    {
-      id: 2,
-      symbol: 'GOOGL',
-      name: 'Alphabet Inc.',
-      price: 142.56,
-      change: -1.23,
-      changePercent: -0.85,
-      shares: 25,
-      value: 3564.00
-    },
-    {
-      id: 3,
-      symbol: 'MSFT',
-      name: 'Microsoft Corp.',
-      price: 378.85,
-      change: 4.67,
-      changePercent: 1.25,
-      shares: 30,
-      value: 11365.50
-    },
-    {
-      id: 4,
-      symbol: 'TSLA',
-      name: 'Tesla Inc.',
-      price: 248.42,
-      change: -8.15,
-      changePercent: -3.18,
-      shares: 15,
-      value: 3726.30
-    },
-    {
-      id: 5,
-      symbol: 'NVDA',
-      name: 'NVIDIA Corp.',
-      price: 456.78,
-      change: 12.34,
-      changePercent: 2.78,
-      shares: 20,
-      value: 9135.60
-    }
-  ]);
+  const [holdings, setHoldings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [newSymbol, setNewSymbol] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [error, setError] = useState('');
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  const [totalValue, setTotalValue] = useState(0);
-  const [totalGainLoss, setTotalGainLoss] = useState(0);
+  const API_BASE_URL = 'http://localhost:5000';
+
+  const fetchWatchlistData = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/watchlist/data`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch watchlist data');
+      }
+
+      const data = await response.json();
+      
+      setHoldings(data.watchlist || []);
+      setLastUpdated(new Date());
+      
+    } catch (err) {
+      setError('Failed to load watchlist data');
+      console.error('Error fetching watchlist data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const total = holdings.reduce((sum, holding) => sum + holding.value, 0);
-    const gainLoss = holdings.reduce((sum, holding) => sum + (holding.change * holding.shares), 0);
-    setTotalValue(total);
-    setTotalGainLoss(gainLoss);
-  }, [holdings]);
+    fetchWatchlistData();
+    
+    // Set up interval to refresh data every 30 seconds
+    const interval = setInterval(() => {
+      fetchWatchlistData();
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const addToWatchlist = async () => {
+    const symbol = newSymbol.trim().toUpperCase();
+    
+    if (!symbol) {
+      setError('Please enter a valid symbol');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/watchlist/${symbol}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add symbol');
+      }
+
+      setNewSymbol('');
+      setError('');
+      
+      // Refresh the watchlist data
+      await fetchWatchlistData();
+      
+    } catch (err) {
+      setError(err.message || 'Failed to add symbol to watchlist');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeFromWatchlist = async (symbol) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/watchlist/${symbol}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to remove symbol');
+      }
+
+      // Refresh the watchlist data
+      await fetchWatchlistData();
+      
+    } catch (err) {
+      setError(err.message || 'Failed to remove symbol from watchlist');
+      console.error('Error removing symbol:', err);
+    }
+  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -74,6 +114,10 @@ const WatchlistSidebar = () => {
 
   const formatPercent = (percent) => {
     return `${percent >= 0 ? '+' : ''}${percent.toFixed(2)}%`;
+  };
+
+  const formatTime = (date) => {
+    return date ? date.toLocaleTimeString() : '';
   };
 
   return (
@@ -92,53 +136,67 @@ const WatchlistSidebar = () => {
         borderBottom: '1px solid #e2e8f0',
         backgroundColor: '#ffffff'
       }}>
-        <h2 style={{
-          margin: '0 0 16px 0',
-          fontSize: '18px',
-          fontWeight: '600',
-          color: '#1e293b'
-        }}>
-          Portfolio Watchlist
-        </h2>
-        
-        {/* Portfolio Summary */}
-        <div style={{
-          backgroundColor: '#f1f5f9',
-          padding: '12px',
-          borderRadius: '8px',
-          marginBottom: '8px'
-        }}>
-          <div style={{
-            fontSize: '12px',
-            color: '#64748b',
-            marginBottom: '4px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }}>
-            Total Value
-          </div>
-          <div style={{
-            fontSize: '20px',
-            fontWeight: '700',
-            color: '#1e293b'
-          }}>
-            {formatCurrency(totalValue)}
-          </div>
-        </div>
-
         <div style={{
           display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          fontSize: '14px',
-          fontWeight: '500'
+          marginBottom: '16px'
         }}>
-          <span style={{ color: '#64748b', marginRight: '8px' }}>Today:</span>
-          <span style={{
-            color: totalGainLoss >= 0 ? '#10b981' : '#ef4444'
+          <h2 style={{
+            margin: '0',
+            fontSize: '2-px',
+            fontWeight: '600',
+            color: '#737375ff',
+            textAlign: 'center',
+            width: '100%',
+            fontFamily: 'Arapey'
           }}>
-            {totalGainLoss >= 0 ? '+' : ''}{formatCurrency(totalGainLoss)}
-          </span>
+            SUHELA
+          </h2>
+          
         </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {lastUpdated && (
+              <span style={{
+                fontSize: '11px',
+                color: '#64748b'
+              }}>
+                <b>Latest Price Update: </b>
+                {formatTime(lastUpdated)}
+              </span>
+            )}
+            <button
+              onClick={fetchWatchlistData}
+              disabled={loading}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: loading ? '#e2e8f0' : '#f1f5f9',
+                border: '1px solid #cbd5e1',
+                borderRadius: '4px',
+                fontSize: '12px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                color: '#64748b'
+              }}
+            >
+              {loading ? '↻' : '⟳'}
+            </button>
+          </div>
+        
+
+
+
+        {error && (
+          <div style={{
+            marginTop: '8px',
+            padding: '8px',
+            backgroundColor: '#fee2e2',
+            color: '#dc2626',
+            fontSize: '12px',
+            borderRadius: '4px'
+          }}>
+            {error}
+          </div>
+        )}
       </div>
 
       {/* Holdings List */}
@@ -147,115 +205,147 @@ const WatchlistSidebar = () => {
         overflowY: 'auto',
         padding: '0'
       }}>
-        {holdings.map((holding) => (
-          <div
-            key={holding.id}
-            style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid #f1f5f9',
-              backgroundColor: '#ffffff',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f8fafc';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ffffff';
-            }}
-          >
-            {/* Stock Symbol and Name */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              marginBottom: '8px'
-            }}>
-              <div>
-                <div style={{
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#1e293b',
-                  marginBottom: '2px'
-                }}>
-                  {holding.symbol}
-                </div>
-                <div style={{
-                  fontSize: '11px',
-                  color: '#64748b',
-                  lineHeight: '1.2'
-                }}>
-                  {holding.name}
-                </div>
-              </div>
-              <div style={{
-                textAlign: 'right'
-              }}>
-                <div style={{
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  color: '#1e293b'
-                }}>
-                  {formatCurrency(holding.price)}
-                </div>
-                <div style={{
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  color: holding.change >= 0 ? '#10b981' : '#ef4444'
-                }}>
-                  {holding.change >= 0 ? '+' : ''}{holding.change.toFixed(2)} ({formatPercent(holding.changePercent)})
-                </div>
-              </div>
-            </div>
-
-            {/* Holdings Info */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              fontSize: '12px'
-            }}>
-              <div style={{ color: '#64748b' }}>
-                {holding.shares} shares
-              </div>
-              <div style={{
-                fontWeight: '600',
-                color: '#1e293b'
-              }}>
-                {formatCurrency(holding.value)}
-              </div>
-            </div>
+        {loading && holdings.length === 0 ? (
+          <div style={{
+            padding: '20px',
+            textAlign: 'center',
+            color: '#64748b',
+            fontSize: '14px'
+          }}>
+            Loading watchlist...
           </div>
-        ))}
+        ) : holdings.length === 0 ? (
+          <div style={{
+            padding: '20px',
+            textAlign: 'center',
+            color: '#64748b',
+            fontSize: '14px'
+          }}>
+            No stocks in watchlist. Add some symbols to get started!
+          </div>
+        ) : (
+          holdings.map((holding, index) => (
+            <div
+              key={`${holding.symbol}-${index}`}
+              style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid #f1f5f9',
+                backgroundColor: '#ffffff',
+                position: 'relative',
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8fafc';
+                const removeBtn = e.currentTarget.querySelector('.remove-btn');
+                if (removeBtn) removeBtn.style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffffff';
+                const removeBtn = e.currentTarget.querySelector('.remove-btn');
+                if (removeBtn) removeBtn.style.opacity = '0';
+              }}
+            >
+              {/* Remove Button */}
+              <button
+                className="remove-btn"
+                onClick={() => removeFromWatchlist(holding.symbol)}
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  opacity: '0',
+                  transition: 'opacity 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ×
+              </button>
+
+              {/* Stock Symbol and Name */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+              }}>
+                <div>
+                  <div style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '2px'
+                  }}>
+                    {holding.symbol}
+                  </div>
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#64748b',
+                    lineHeight: '1.2'
+                  }}>
+                    {holding.name}
+                  </div>
+                </div>
+                <div style={{
+                  textAlign: 'right'
+                }}>
+                  <div style={{
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#1e293b'
+                  }}>
+                    {formatCurrency(holding.price)}
+                  </div>
+                  <div style={{
+                    fontSize: '11px',
+                    fontWeight: '500',
+                    color: holding.change >= 0 ? '#10b981' : '#ef4444'
+                  }}>
+                    {holding.change >= 0 ? '+' : ''}{holding.change.toFixed(2)} ({formatPercent(holding.changePercent)})
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      {/* Footer */}
+      {/* Add Symbol Form - Always Visible */}
       <div style={{
         padding: '16px 20px',
-        borderTop: '1px solid #e2e8f0',
-        backgroundColor: '#ffffff'
+        backgroundColor: '#f8fafc',
+        borderTop: '1px solid #e2e8f0'
       }}>
-        <button style={{
-          width: '100%',
-          padding: '8px 16px',
-          backgroundColor: '#3b82f6',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          fontSize: '13px',
-          fontWeight: '500',
-          cursor: 'pointer',
-          transition: 'background-color 0.2s ease'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#2563eb';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#3b82f6';
-        }}
-        >
-          + Add to Watchlist
-        </button>
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '8px'
+        }}>
+          <input
+            type="text"
+            placeholder="Enter symbol (e.g., AAPL)"
+            value={newSymbol}
+            onChange={(e) => setNewSymbol(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && addToWatchlist()}
+            disabled={loading}
+            style={{
+              flex: 1,
+              padding: '8px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              fontSize: '13px'
+            }}
+          />
+
+        </div>
       </div>
     </div>
   );
