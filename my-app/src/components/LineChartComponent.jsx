@@ -33,7 +33,7 @@ const LineChartComponent = ({ data, title = "Line Chart" }) => {
 
   return (
     <div style={{ padding: '20px', height: '100%' }}>
-      <h3 style={{ textAlign: 'left', marginBottom: '20px', color: '#626566', fontSize: '32px', fontWeight: '400' }}>
+      <h3 style={{ textAlign: 'left', marginBottom: '10px', color: '#626566', fontSize: '32px', fontWeight: '400' }}>
         {title}
       </h3>
       <ResponsiveContainer width="100%" height="80%">
@@ -51,7 +51,7 @@ const LineChartComponent = ({ data, title = "Line Chart" }) => {
             tickLine={false}
             domain={yAxisDomain}
             tickFormatter={(value) => value.toFixed(2)}
-            tick={{ dy: -5 }}
+            tick={{ dy: -4 }}
           />
           <Tooltip />
           <Area 

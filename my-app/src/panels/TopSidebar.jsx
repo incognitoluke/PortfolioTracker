@@ -1,6 +1,28 @@
 import React from 'react';
 
 const TopSidebar = ({ currentChart, chartTypes }) => {
+  // Get current date and time
+  const now = new Date();
+  const options = { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  };
+  
+  const formatDate = (date) => {
+    const formatted = date.toLocaleDateString('en-US', options);
+    // Add ordinal suffix to day
+    const day = date.getDate();
+    const suffix = day === 1 || day === 21 || day === 31 ? 'st' :
+                   day === 2 || day === 22 ? 'nd' :
+                   day === 3 || day === 23 ? 'rd' : 'th';
+    
+    return formatted.replace(/(\d{1,2}),/, `$1${suffix},`).replace(/ at /, ' | ');
+  };
+
   return (
     <div style={{
       backgroundColor: '#f8fafc',
@@ -18,7 +40,7 @@ const TopSidebar = ({ currentChart, chartTypes }) => {
         fontWeight: '600', 
         color: '#1e293b' 
       }}>
-        Dashboard
+        {formatDate(now)}
       </h2>
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>

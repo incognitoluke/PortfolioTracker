@@ -144,7 +144,7 @@ const WatchlistSidebar = () => {
         }}>
           <h2 style={{
             margin: '0',
-            fontSize: '2-px',
+            fontSize: '24px', // Fixed the typo from '2-px'
             fontWeight: '600',
             color: '#737375ff',
             textAlign: 'center',
@@ -153,37 +153,39 @@ const WatchlistSidebar = () => {
           }}>
             SUHELA
           </h2>
-          
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {lastUpdated && (
-              <span style={{
-                fontSize: '11px',
-                color: '#64748b'
-              }}>
-                <b>Latest Price Update: </b>
-                {formatTime(lastUpdated)}
-              </span>
-            )}
-            <button
-              onClick={fetchWatchlistData}
-              disabled={loading}
-              style={{
-                padding: '4px 8px',
-                backgroundColor: loading ? '#e2e8f0' : '#f1f5f9',
-                border: '1px solid #cbd5e1',
-                borderRadius: '4px',
-                fontSize: '12px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                color: '#64748b'
-              }}
-            >
-              {loading ? '↻' : '⟳'}
-            </button>
-          </div>
         
-
-
+        <div style={{ 
+          display: 'flex', 
+          gap: '8px', 
+          alignItems: 'center', 
+          justifyContent: 'center' // This centers the content horizontally
+        }}>
+          {lastUpdated && (
+            <span style={{
+              fontSize: '11px',
+              color: '#64748b'
+            }}>
+              <b>Latest Price Update: </b>
+              {formatTime(lastUpdated)}
+            </span>
+          )}
+          <button
+            onClick={fetchWatchlistData}
+            disabled={loading}
+            style={{
+              padding: '4px 8px',
+              backgroundColor: loading ? '#e2e8f0' : '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              fontSize: '12px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              color: '#64748b'
+            }}
+          >
+            {loading ? '↻' : '⟳'}
+          </button>
+        </div>
 
         {error && (
           <div style={{

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import TimeViewCarousel from './TimeViewCarousel';
 import TopSidebar from '../panels/TopSidebar';
 import Suhela from '../images/Suhela.png';
+import TopSubSidebar from '../panels/TopSubSidebar';
 
 const timeViews = ['1-Day', '1-Week', '1-Month', 'YTD', '5-Year'];
 
@@ -9,7 +10,7 @@ const timeViews = ['1-Day', '1-Week', '1-Month', 'YTD', '5-Year'];
 const dataCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-const WACarousel = () => {
+const WACarousel = ({ onRotationComplete }) => {
   const [watchlistTickers, setWatchlistTickers] = useState([]);
   const [currentTickerIndex, setCurrentTickerIndex] = useState(0);
   const [animationKey, setAnimationKey] = useState(0);
@@ -18,6 +19,7 @@ const WACarousel = () => {
   const [preloadProgress, setPreloadProgress] = useState(0);
   const [allTickerData, setAllTickerData] = useState(new Map());
   const [error, setError] = useState('');
+  const [currentTimePeriod, setCurrentTimePeriod] = useState(0);
 
   const API_BASE_URL = 'http://localhost:5000';
 
@@ -281,8 +283,16 @@ const WACarousel = () => {
       const interval = setInterval(() => {
         setIsTransitioning(true);
         setTimeout(() => {
-          setCurrentTickerIndex(prev => (prev + 1) % watchlistTickers.length);
+          const nextIndex = (currentTickerIndex + 1) % watchlistTickers.length;
+          setCurrentTickerIndex(nextIndex);
           setAnimationKey(prev => prev + 1);
+          
+          // Check if we've completed a full rotation (back to index 0)
+          if (nextIndex === 0 && onRotationComplete) {
+            console.log('WACarousel completed full rotation');
+            onRotationComplete();
+          }
+          
           setTimeout(() => {
             setIsTransitioning(false);
           }, 100);
@@ -290,7 +300,7 @@ const WACarousel = () => {
       }, 30000); // Changed from 18000 to 30000 (5 time views × 6 seconds each)
       return () => clearInterval(interval);
     }
-  }, [isPreloading, allTickerData, watchlistTickers]);
+  }, [isPreloading, allTickerData, watchlistTickers, currentTickerIndex, onRotationComplete]);
 
   const currentTicker = watchlistTickers[currentTickerIndex];
 
@@ -420,11 +430,11 @@ const WACarousel = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', fontFamily: 'Arial, sans-serif', position: 'relative' }}>
-      {/* Top Sidebar - Shows watchlist ticker rotation */}
-      <TopSidebar 
+      {/* Top Sub Sidebar - Shows watchlist ticker rotation and time periods */}
+      <TopSubSidebar 
         currentChart={currentTickerIndex} 
         chartTypes={watchlistTickers}
-        currentTicker={currentTicker}
+        currentTimePeriod={currentTimePeriod}
       />
       
       {/* Chart Area - Between top and bottom sidebars */}
@@ -457,6 +467,7 @@ const WACarousel = () => {
                 preloadedData={allTickerData.get(ticker) || []}
                 showTopBar={false}
                 showBottomBar={true}
+                onTimePeriodChange={setCurrentTimePeriod}
               />
             )}
           </div>

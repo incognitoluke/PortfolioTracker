@@ -6,7 +6,8 @@ import Staging from './scenes/Staging';
 import SPcarousel from './scenes/SPcarousel';
 import TimeViewCarousel from './scenes/TimeViewCarousel';
 import WACarousel from './scenes/WAcarousel';
-
+import SectorOverview from './scenes/SectorOverview';
+import MasterView from './scenes/MasterView';
 
 const App = () => {
   return (
@@ -41,6 +42,8 @@ const App = () => {
             <Route path="/carousel" element={<SPcarousel />} />
             <Route path="/watchlist" element={<WACarousel />} />
             <Route path="/time" element={<TimeViewCarousel />} />
+            <Route path="/sectors" element={<SectorOverview />} />
+            <Route path="/master" element={<MasterView />} />
           </Routes>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import TimeViewCarousel from './TimeViewCarousel';
-import TopSidebar from '../panels/TopSidebar';
+import TopSubSidebar from '../panels/TopSubSidebar';
 import Suhela from '../images/Suhela.png';
 
 const tickers = ['XLE', 'XLP', 'XLF', "GOOGL", 'AMZN', 'NFLX', 'NVDA', 'META', 'AMD', 'INTC','MMM'];
@@ -10,13 +10,14 @@ const timeViews = ['1-Day', '1-Week', '1-Month', 'YTD', '5-Year'];
 const dataCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-const SPcarousel = () => {
+const SPcarousel = ({ onRotationComplete }) => {
   const [currentTickerIndex, setCurrentTickerIndex] = useState(0);
   const [animationKey, setAnimationKey] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isPreloading, setIsPreloading] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState(0);
   const [allTickerData, setAllTickerData] = useState(new Map());
+  const [currentTimePeriod, setCurrentTimePeriod] = useState(0);
 
   const getPeriodAndInterval = (timeView) => {
     switch (timeView) {
@@ -230,8 +231,16 @@ const SPcarousel = () => {
       const interval = setInterval(() => {
         setIsTransitioning(true);
         setTimeout(() => {
-          setCurrentTickerIndex(prev => (prev + 1) % tickers.length);
+          const nextIndex = (currentTickerIndex + 1) % tickers.length;
+          setCurrentTickerIndex(nextIndex);
           setAnimationKey(prev => prev + 1);
+          
+          // Check if we've completed a full rotation (back to index 0)
+          if (nextIndex === 0 && onRotationComplete) {
+            console.log('SPcarousel completed full rotation');
+            onRotationComplete();
+          }
+          
           setTimeout(() => {
             setIsTransitioning(false);
           }, 100);
@@ -239,7 +248,7 @@ const SPcarousel = () => {
       }, 30000); // Changed from 18000 to 30000 (5 time views × 6 seconds each)
       return () => clearInterval(interval);
     }
-  }, [isPreloading, allTickerData]);
+  }, [isPreloading, allTickerData, currentTickerIndex, onRotationComplete]);
 
   const currentTicker = tickers[currentTickerIndex];
 
@@ -317,11 +326,11 @@ const SPcarousel = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', fontFamily: 'Arial, sans-serif', position: 'relative' }}>
-      {/* Top Sidebar - Shows ticker rotation */}
-      <TopSidebar 
+      {/* Top Sub Sidebar - Shows ticker rotation and time periods */}
+      <TopSubSidebar 
         currentChart={currentTickerIndex} 
         chartTypes={tickers}
-        currentTicker={currentTicker}
+        currentTimePeriod={currentTimePeriod}
       />
       
       {/* Chart Area - Between top and bottom sidebars */}
@@ -354,6 +363,9 @@ const SPcarousel = () => {
                 preloadedData={allTickerData.get(ticker) || []}
                 showTopBar={false}
                 showBottomBar={true}
+                currentTickerIndex={currentTickerIndex}
+                allTickers={tickers}
+                onTimePeriodChange={setCurrentTimePeriod}
               />
             )}
           </div>

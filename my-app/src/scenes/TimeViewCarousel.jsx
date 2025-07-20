@@ -7,7 +7,15 @@ import Suhela from '../images/Suhela.png';
 const timeViews = ['1-Day', '1-Week', '1-Month', 'YTD', '5-Year'];
 const DEFAULT_TICKER = 'AAPL';
 
-const TimeViewCarousel = ({ ticker = DEFAULT_TICKER, preloadedData = [], showTopBar = true, showBottomBar = true }) => {
+const TimeViewCarousel = ({ 
+  ticker = DEFAULT_TICKER, 
+  preloadedData = [], 
+  showTopBar = true, 
+  showBottomBar = true,
+  currentTickerIndex = 0,
+  allTickers = [],
+  onTimePeriodChange
+}) => {
   const [chartIndex, setChartIndex] = useState(0);
   const [animationKey, setAnimationKey] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -185,6 +193,13 @@ const TimeViewCarousel = ({ ticker = DEFAULT_TICKER, preloadedData = [], showTop
     }
   }, [ticker, preloadedData]);
 
+  // Report time period changes to parent component
+  useEffect(() => {
+    if (onTimePeriodChange) {
+      onTimePeriodChange(chartIndex);
+    }
+  }, [chartIndex, onTimePeriodChange]);
+
   useEffect(() => {
     if (chartData.length === 5) { // Only start when we have all 5 charts
       const interval = setInterval(() => {
@@ -231,15 +246,14 @@ const TimeViewCarousel = ({ ticker = DEFAULT_TICKER, preloadedData = [], showTop
     }}>
       {showTopBar && (
         <TopSubSidebar 
-          currentChart={chartIndex} 
-          chartTypes={timeViews}
-          ticker={ticker}
-          companyName={companyName}
+          currentChart={currentTickerIndex}
+          chartTypes={allTickers.length > 0 ? allTickers : [ticker]}
+          currentTimePeriod={chartIndex}
         />
       )}
       
       <div style={{ 
-        height: showBottomBar ? 'calc(100vh - 120px)' : '100%',
+        height: showBottomBar ? 'calc(100vh - 180px)' : showTopBar ? 'calc(100vh - 120px)' : '100%',
         position: 'relative', 
         backgroundColor: '#ffffff',
         backgroundRepeat: 'no-repeat',
@@ -329,54 +343,6 @@ const TimeViewCarousel = ({ ticker = DEFAULT_TICKER, preloadedData = [], showTop
         )}
       </div>
 
-      {showBottomBar && (
-        <div style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: '#ffffff',
-          borderTop: '2px solid #e2e8f0',
-          padding: '16px 24px',
-          boxSizing: 'border-box',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '32px',
-          flexWrap: 'wrap',
-          zIndex: 9999,
-          height: '60px',
-          width: '100vw'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ 
-              fontSize: '12px', 
-              fontWeight: '500', 
-              color: '#64748b', 
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              Time Views:
-            </span>
-            {timeViews.map((timeView, index) => (
-              <div
-                key={timeView}
-                style={{
-                  padding: '4px 8px',
-                  backgroundColor: chartIndex === index ? '#e0f2fe' : '#ffffff',
-                  border: chartIndex === index ? '1px solid #0891b2' : '1px solid #e2e8f0',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  color: chartIndex === index ? '#0891b2' : '#64748b',
-                  fontWeight: chartIndex === index ? '500' : '400'
-                }}
-              >
-                {timeView}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <style jsx>{`
         @keyframes bounce {
